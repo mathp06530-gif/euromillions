@@ -1,0 +1,1040 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EuroMillions — le labo</title>
+<style>
+:root {
+  color-scheme: dark;
+  --page: #0b0c10; --surface: #15161b; --surface2: #1d1f26; --ink: #f0efec; --ink2: #c3c2b7; --muted: #8b8a85;
+  --grid: #2a2c33; --axis: #3a3c44; --border: rgba(255,255,255,.09);
+  --serie: #3987e5; --serie-fort: #86b6ef; --bande: rgba(255,255,255,.08); --ref: #c3c2b7;
+  --froid: #3987e5; --chaud: #e66767; --or: #f2b530; --or-fonce: #c98500;
+  --alerte-fond: #2e2613; --alerte-bord: #fab219;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 70px; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  background-image: radial-gradient(900px 500px at 85% -10%, rgba(57,135,229,.20), transparent 60%), radial-gradient(700px 420px at 0% 0%, rgba(242,181,48,.10), transparent 60%); background-repeat: no-repeat; }
+main { max-width: 1140px; margin: 0 auto; padding: 0 16px 64px; }
+h1 { font-size: clamp(30px, 5vw, 48px); line-height: 1.05; margin: 0; letter-spacing: -.02em; }
+h2 { font-size: 22px; margin: 0 0 4px; letter-spacing: -.01em; }
+h3 { font-size: 15px; margin: 22px 0 8px; }
+p { margin: 6px 0; }
+.sous { color: var(--ink2); }
+.petit { color: var(--muted); font-size: 13px; }
+.sur { text-transform: uppercase; letter-spacing: .12em; font-size: 12px; color: var(--or); font-weight: 600; }
+
+nav { position: sticky; top: 0; z-index: 5; backdrop-filter: blur(12px); background: rgba(11,12,16,.78); border-bottom: 1px solid var(--border); }
+nav .in { max-width: 1140px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 6px 18px; align-items: center; flex-wrap: wrap; }
+nav .marque { font-weight: 700; letter-spacing: -.01em; margin-right: auto; }
+nav .marque b { color: var(--or); }
+nav a { color: var(--ink2); text-decoration: none; font-size: 14px; padding: 4px 2px; border-bottom: 2px solid transparent; }
+nav a:hover { color: var(--ink); border-color: var(--or); }
+
+.hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px 40px; align-items: center; padding: 44px 0 28px; }
+.compte { display: flex; gap: 10px; margin-top: 18px; }
+.compte div { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; min-width: 76px; text-align: center; }
+.compte b { display: block; font-size: 30px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.compte span { color: var(--muted); font-size: 12px; }
+.vedette { background: linear-gradient(160deg, #1c1f29, #14151a); border: 1px solid var(--border); border-radius: 18px; padding: 22px; box-shadow: 0 20px 60px rgba(0,0,0,.45); }
+.jackpot { font-size: 20px; color: var(--ink2); margin-top: 6px; }
+.jackpot b { font-size: 34px; color: var(--or); letter-spacing: -.01em; }
+.jackpot.petit-j { font-size: 14px; color: var(--muted); }
+.vedette + .vedette { margin-top: 12px; padding: 14px 22px; box-shadow: none; }
+
+.boules { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.b, .e { display: inline-flex; align-items: center; justify-content: center; width: 2.2em; height: 2.2em; border-radius: 50%; font-weight: 700; font-variant-numeric: tabular-nums; color: #0b0b0b;
+  background: radial-gradient(circle at 32% 28%, #ffffff, #d9dbe3 55%, #9ea3b3); box-shadow: inset 0 -3px 6px rgba(0,0,0,.25), 0 2px 6px rgba(0,0,0,.4); }
+.e { background: radial-gradient(circle at 32% 28%, #fff3c4, var(--or) 55%, var(--or-fonce)); clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); width: 2.7em; height: 2.7em; box-shadow: none; padding-top: .15em; font-size: .9em; }
+.geant .b { font-size: 24px; } .geant .e { font-size: 21px; }
+.moyen .b { font-size: 17px; } .moyen .e { font-size: 15px; }
+.sep { width: 8px; }
+@media (prefers-reduced-motion: no-preference) {
+  .geant .b, .geant .e { animation: saut .5s cubic-bezier(.2,1.4,.4,1) both; }
+  .geant :nth-child(2) { animation-delay: .07s; } .geant :nth-child(3) { animation-delay: .14s; } .geant :nth-child(4) { animation-delay: .21s; }
+  .geant :nth-child(5) { animation-delay: .28s; } .geant :nth-child(7) { animation-delay: .4s; } .geant :nth-child(8) { animation-delay: .47s; }
+  @keyframes saut { from { transform: translateY(-28px) scale(.4); opacity: 0; } }
+}
+
+section { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px 24px; margin-top: 18px; }
+.alerte { background: var(--alerte-fond); border-left: 4px solid var(--alerte-bord); padding: 10px 14px; border-radius: 8px; margin: 0 0 8px; }
+.tuiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 0 0 4px; }
+.tuile { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; }
+.tuile .v { font-size: 26px; font-weight: 700; line-height: 1.15; }
+.tuile .l { color: var(--ink2); font-size: 13px; }
+.deux { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 8px 36px; }
+
+.filtres { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin: 10px 0 2px; }
+.seg { display: inline-flex; border: 1px solid var(--axis); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; background: transparent; color: var(--ink2); padding: 6px 12px; font: inherit; cursor: pointer; white-space: nowrap; }
+.seg button + button { border-left: 1px solid var(--axis); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--page); }
+button.action { border: 1px solid var(--axis); background: var(--surface2); color: var(--ink); border-radius: 10px; padding: 7px 14px; font: inherit; cursor: pointer; }
+button.action:hover { border-color: var(--or); }
+
+.plateau { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; max-width: 520px; }
+.plateau.etoiles { grid-template-columns: repeat(12, 1fr); margin-top: 12px; }
+.case { aspect-ratio: 1; border: 1px solid var(--axis); border-radius: 10px; background: var(--surface2); color: var(--ink); font: inherit; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; padding: 0; position: relative; overflow: hidden; }
+.case i { position: absolute; inset: 0; opacity: .55; }
+.case span { position: relative; }
+.case:hover { border-color: var(--ink2); }
+.case[aria-pressed="true"] { outline: 3px solid var(--ink); outline-offset: -3px; border-color: var(--ink); }
+.plateau.etoiles .case[aria-pressed="true"] { outline-color: var(--or); border-color: var(--or); }
+.echelle { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin-top: 10px; }
+.echelle i { flex: 0 0 140px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--froid), #383835, var(--chaud)); }
+.verdict { font-size: 22px; font-weight: 700; line-height: 1.25; margin: 4px 0 8px; }
+.jauge { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--froid), #383835 50%, var(--chaud)); position: relative; margin: 14px 0 4px; }
+.jauge b { position: absolute; top: -5px; width: 4px; height: 20px; background: var(--ink); border-radius: 2px; transform: translateX(-2px); }
+.jauge-l { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+
+.graph { width: 100%; }
+.graph svg { display: block; width: 100%; }
+.graph text { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.barre { fill: var(--serie); }
+.cible:hover + .barre { fill: var(--serie-fort); }
+.legende { display: flex; flex-wrap: wrap; gap: 4px 18px; color: var(--ink2); font-size: 13px; margin-top: 2px; }
+.legende i { display: inline-block; vertical-align: middle; margin-right: 6px; }
+.l-ref { width: 22px; border-top: 2px dashed var(--ref); }
+.l-bande { width: 22px; height: 12px; background: var(--bande); }
+.l-serie { width: 16px; height: 3px; border-radius: 2px; }
+.plateau.mini { grid-template-columns: repeat(25, 1fr); max-width: none; gap: 4px; margin: 6px 0 8px; }
+.plateau.mini .case { font-size: 12px; border-radius: 7px; }
+.plateau.mini.etoiles { grid-template-columns: repeat(12, 1fr); max-width: 420px; }
+@media (max-width: 760px) { .plateau.mini { grid-template-columns: repeat(10, 1fr); } }
+.ligne { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.ligne.fond { stroke-width: 1; opacity: .55; }
+.hb { display: grid; grid-template-columns: fit-content(48%) minmax(60px, 1fr) max-content; gap: 7px 10px; align-items: center; margin: 8px 0; }
+.hb .piste { height: 14px; }
+.hb .rempli { height: 100%; background: var(--serie); border-radius: 0 4px 4px 0; min-width: 1px; }
+.hb .rempli.neutre { background: var(--axis); }
+.hb .val { font-variant-numeric: tabular-nums; text-align: right; }
+#bulle { position: fixed; pointer-events: none; background: var(--ink); color: var(--page); padding: 6px 9px; border-radius: 8px; font-size: 13px; line-height: 1.35; max-width: 260px; z-index: 10; display: none; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th { color: var(--ink2); font-weight: 600; position: sticky; top: 0; background: var(--surface); z-index: 1; }
+td.n, th.n { text-align: right; }
+td .boules { flex-wrap: nowrap; }
+.defile { max-height: 520px; overflow: auto; border: 1px solid var(--border); border-radius: 12px; margin-top: 10px; }
+details { margin-top: 12px; }
+summary { cursor: pointer; color: var(--ink2); }
+input[type=text], select { font: inherit; padding: 6px 10px; border: 1px solid var(--axis); border-radius: 10px; background: var(--surface2); color: var(--ink); }
+/* ---------- 3D, animations, habillage ---------- */
+:root { --neon: #5ad1ff; }
+#fond { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+.hero-jackpot { font-size: clamp(46px, 9vw, 88px); font-weight: 800; letter-spacing: -.03em; line-height: 1; margin-top: 10px; font-variant-numeric: tabular-nums;
+  background: linear-gradient(90deg, #fff3c4, var(--or), #fff3c4, var(--or)); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; }
+#scene-machine { width: 100%; aspect-ratio: 1 / 1; max-height: 540px; cursor: grab; touch-action: pan-y; }
+#scene-machine canvas, .scene3d canvas { display: block; }
+.machine-cmd { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 2px 0 6px; }
+.scene3d { width: 100%; height: 400px; cursor: grab; touch-action: pan-y; border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+  background: radial-gradient(600px 300px at 50% 100%, rgba(57,135,229,.12), transparent 70%); }
+.deux .vedette + .vedette { margin-top: 0; padding: 22px; }
+.vedette { position: relative; overflow: hidden; }
+.vedette::after, section::before { content: ""; position: absolute; top: 0; left: 22px; width: 90px; height: 2px; background: linear-gradient(90deg, var(--neon), transparent); }
+section { position: relative; }
+button.action { transition: border-color .2s, box-shadow .2s, transform .1s; }
+button.action:hover { box-shadow: 0 0 0 3px rgba(90,209,255,.12); border-color: var(--neon); }
+button.action:active { transform: translateY(1px); }
+.case { transition: transform .12s, border-color .12s; }
+.case:hover { transform: translateY(-2px); }
+.hb .rempli { transition: width .9s cubic-bezier(.2,.8,.2,1); }
+@media (prefers-reduced-motion: no-preference) {
+  .hero-jackpot { animation: brille 7s linear infinite; }
+  @keyframes brille { to { background-position: -300% 0; } }
+  .rev { opacity: 0; transform: translateY(26px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
+  .rev.vu { opacity: 1; transform: none; }
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+<canvas id="fond"></canvas>
+<nav><div class="in">
+  <span class="marque">EuroMillions <b>· le labo</b></span>
+  <a href="#agent">Agent</a><a href="#strategies">Stratégies</a><a href="#ma-grille">Teste ta grille</a><a href="#probas">Probabilités</a>
+  <a href="#historique">Historique</a><a href="#entrainement">Entraînement</a><a href="#tirages">Tirages</a>
+</div></nav>
+<main>
+  <div class="hero" id="agent">
+    <div>
+      <div class="sur">Prochain tirage</div>
+      <h1 id="prochain"></h1>
+      <div class="hero-jackpot" id="hero-jackpot"></div>
+      <div class="sous" id="hero-jackpot-l"></div>
+      <div class="compte" id="compte"></div>
+      <p class="petit" id="compte-note"></p>
+      <p class="sous" id="resume" style="margin-top:14px"></p>
+    </div>
+    <div class="machine" id="machine">
+      <div id="scene-machine"></div>
+      <div class="machine-cmd">
+        <button class="action" id="m-agent">Sortir la grille de l'agent</button>
+        <button class="action" id="m-hasard">Tirage de démonstration</button>
+        <button class="action" id="m-melanger">Remélanger</button>
+      </div>
+      <p class="petit" style="text-align:center">Animation 3D : elle montre une grille, elle ne prédit pas le tirage. Fais glisser pour tourner.</p>
+    </div>
+  </div>
+  <div class="deux" id="agent-grilles" style="margin-bottom:18px"></div>
+  <div class="alerte" id="perime" hidden></div>
+  <div class="tuiles">
+    <div class="tuile"><div class="v">10 %</div><div class="l">chance qu'une boule précise sorte, la même pour les 50</div></div>
+    <div class="tuile"><div class="v">16,7 %</div><div class="l">chance qu'une étoile précise sorte, la même pour les 12</div></div>
+    <div class="tuile"><div class="v">1 sur 139,8 M</div><div class="l">chance qu'une grille gagne le jackpot</div></div>
+    <div class="tuile"><div class="v" id="dernier-v"></div><div class="l" id="dernier-l"></div></div>
+  </div>
+
+  <section>
+    <h2>Ce que fait l'agent</h2>
+    <p class="sous">Il ne peut pas deviner les numéros : ses grilles ont la même chance de sortir que toutes les autres. Ce qu'il optimise, c'est le <b>montant gagné si elles sortent</b>, en choisissant des numéros que les autres joueurs jouent peu, pour partager avec moins de monde.</p>
+    <div id="bloc-equity" hidden>
+      <h3>Résultat cumulé d'une grille par tirage, en euros (simulation)</h3>
+      <div class="legende" id="leg-equity"></div>
+      <div class="graph" id="g-equity"></div>
+      <p class="petit" id="note-equity"></p>
+    </div>
+    <h3>Journal de l'agent</h3>
+    <p class="sous">Chaque grille est enregistrée avant le tirage et n'est plus modifiée. Tu peux vérifier ce qu'elle a réellement donné.</p>
+    <div class="defile"><table id="t-agent"></table></div>
+    <p class="petit" id="agent-bilan"></p>
+  </section>
+
+  <section id="strategies">
+    <h2>Stratégies de mise</h2>
+    <p class="sous">En trading, une stratégie peut avoir un avantage. Ici, chaque grille perd de l'argent en moyenne, donc aucune façon de miser ne devient gagnante sur la durée : elle change seulement la vitesse à laquelle on perd.</p>
+    <h3 id="val-titre"></h3>
+    <div class="tuiles" id="val-tuiles"></div>
+    <p class="petit" id="val-note"></p>
+    <h3>Résultat cumulé de chaque stratégie depuis 2016, en euros</h3>
+    <div class="legende" id="leg-strat"></div>
+    <div class="graph" id="g-strat"></div>
+    <div class="defile"><table id="t-strat"></table></div>
+    <p class="petit" id="note-strat"></p>
+  </section>
+
+  <section id="ma-grille">
+    <h2>Teste ta grille</h2>
+    <p class="sous">Choisis 5 numéros et 2 étoiles. Tu verras à quel point la grille est jouée par les autres, et ce qu'elle aurait rapporté à chaque tirage depuis 2016, sans rien miser.</p>
+    <div class="deux">
+      <div>
+        <div class="filtres">
+          <button class="action" id="g-agent">Grille de l'agent</button>
+          <button class="action" id="g-hasard">Au hasard</button>
+          <button class="action" id="g-vider">Effacer</button>
+        </div>
+        <div class="filtres"><span>Couleur des cases</span>
+          <span class="seg" id="f-couleur">
+            <button data-v="pop" aria-pressed="true">Jouée par les autres</button>
+            <button data-v="rien" aria-pressed="false">Aucune</button>
+          </span>
+        </div>
+        <div class="plateau" id="p-boules"></div>
+        <div class="plateau etoiles" id="p-etoiles"></div>
+        <div class="echelle" id="echelle"><span>peu jouée</span><i></i><span>très jouée</span></div>
+      </div>
+      <div id="verdict"></div>
+    </div>
+  </section>
+
+  <section id="probas">
+    <h2>Probabilités du prochain tirage</h2>
+    <p class="sous">Les vraies probabilités, celles qui découlent du tirage : 5 boules parmi 50 et 2 étoiles parmi 12, toutes à égalité.</p>
+    <div class="deux">
+      <div><h3>Avec une grille : combien de bonnes boules ?</h3><div class="hb" id="dist-boules"></div></div>
+      <div><h3>Avec une grille : combien de bonnes étoiles ?</h3><div class="hb" id="dist-etoiles"></div></div>
+    </div>
+    <h3>Et prédire à 70 % ?</h3>
+    <p>Aucune méthode ne donne 70 % de chances de trouver les numéros. La meilleure prédiction possible pour une boule est de 10 %, la même pour les 50. La section Entraînement le vérifie sur des tirages jamais vus.</p>
+    <p class="sous">La seule affirmation vraie à 70 % : avec 11 numéros quelconques, il y a 72,8 % de chances qu'au moins l'un d'eux sorte.</p>
+    <h3>Ce qui change vraiment la chance : le nombre de grilles différentes</h3>
+    <div class="filtres">
+      <label>Grilles jouées à un tirage <input type="text" id="c-grilles" value="1" size="8" inputmode="numeric"></label>
+      <span class="seg" id="c-rapides">
+        <button data-v="1">1</button><button data-v="10">10</button><button data-v="100">100</button><button data-v="10000">10 000</button>
+      </span>
+    </div>
+    <div class="tuiles" id="c-resultat" style="margin-top:10px"></div>
+    <p class="petit">Chaque grille différente ajoute exactement une chance sur 139 838 160, et coûte 2,50 €. Jouer à plusieurs (un groupe qui partage les grilles et les gains) est la seule façon d'avoir plus de grilles pour la même mise personnelle.</p>
+  </section>
+
+  <section id="historique">
+    <h2>Historique des numéros</h2>
+    <p class="sous">La ligne pointillée montre ce qu'on attend du pur hasard, la zone grise la fluctuation normale autour.</p>
+    <div class="filtres">
+      <span>Afficher</span>
+      <span class="seg" id="f-vue">
+        <button data-v="3d" aria-pressed="false">Carte 3D</button>
+        <button data-v="courbe" aria-pressed="true">Courbes</button>
+        <button data-v="pop" aria-pressed="false">Popularité</button>
+        <button data-v="freq" aria-pressed="false">Sorties</button>
+        <button data-v="ret" aria-pressed="false">Retards</button>
+      </span>
+      <span id="bloc-periode">
+        <span class="seg" id="f-periode">
+          <button data-v="tout" aria-pressed="true">Tout</button>
+          <button data-v="regles" aria-pressed="false">Depuis 2016</button>
+          <button data-v="200" aria-pressed="false">200 derniers</button>
+        </span>
+      </span>
+      <span class="seg" id="f-tri">
+        <button data-v="num" aria-pressed="true">Par numéro</button>
+        <button data-v="val" aria-pressed="false">Par valeur</button>
+      </span>
+    </div>
+    <h3 id="titre-b"></h3>
+    <div class="plateau mini" id="sel-b"></div>
+    <div class="scene3d" id="v3-b"></div>
+    <div class="graph" id="g-b"></div>
+    <h3 id="titre-e"></h3>
+    <div class="plateau mini etoiles" id="sel-e"></div>
+    <div class="scene3d" id="v3-e" style="height:300px"></div>
+    <div class="graph" id="g-e"></div>
+    <div class="legende" id="legende"></div>
+    <p class="petit" id="note-vue"></p>
+    <details>
+      <summary>Voir les chiffres en tableau</summary>
+      <div class="deux">
+        <div class="defile"><table id="t-stats-b"></table></div>
+        <div class="defile"><table id="t-stats-e"></table></div>
+      </div>
+    </details>
+  </section>
+
+  <section id="entrainement">
+    <h2>Entraînement et tests</h2>
+    <p class="sous" id="ent-intro">Tout est jugé sur des tirages que l'agent n'avait pas vus au moment de décider.</p>
+    <div class="deux">
+      <div>
+        <h3>Prédire les numéros : bonnes boules par tirage</h3>
+        <div class="hb" id="ent-pred"></div>
+        <p class="petit" id="ent-pred-note"></p>
+      </div>
+      <div>
+        <h3>Simulation : retour pour 1 € misé (hors gros lots)</h3>
+        <div class="hb" id="ent-simu"></div>
+        <p class="petit" id="ent-simu-note"></p>
+      </div>
+    </div>
+    <div class="deux">
+      <div><h3 id="bt-titre-b"></h3><div class="hb" id="bt-b"></div></div>
+      <div><h3 id="bt-titre-e"></h3><div class="hb" id="bt-e"></div></div>
+    </div>
+    <p class="petit">Stratégies rejouées sur tout l'historique : avant chaque tirage, pari sur les numéros les plus sortis (« chauds »), les moins sortis (« froids ») ou les plus en retard. Une stratégie qui marcherait ferait nettement mieux que la barre grise.</p>
+    <p id="equilibre"></p>
+    <h3>Recherche d'une faille dans le tirage</h3>
+    <p class="sous" id="bat-intro"></p>
+    <div class="defile"><table id="t-batterie"></table></div>
+    <p class="petit" id="bat-note"></p>
+    <h3>Deviner ce que jouent les autres</h3>
+    <p id="ent-valid"></p>
+  </section>
+
+  <section id="tirages">
+    <h2>Tous les tirages</h2>
+    <div class="filtres">
+      <label>Année <select id="f-annee"></select></label>
+      <label>Contient les boules <input type="text" id="f-nums" placeholder="ex. 7 13" size="12"></label>
+      <span class="sous" id="nb-tirages"></span>
+    </div>
+    <div class="defile"><table id="t-tirages"></table></div>
+  </section>
+
+  <p class="petit" id="pied"></p>
+</main>
+<div id="bulle"></div>
+
+<script>
+const D = /*__DONNEES__*/null;
+const T = D.tirages;                       // [date, b1..b5, e1, e2], du plus ancien au plus récent
+const JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+const $ = id => document.getElementById(id);
+const nb = (x, d = 0) => x.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const pct = (x, d = 1) => nb(100 * x, d) + ' %';
+const eur = x => nb(x, 2) + ' €';
+const pl = (n, mot) => `${nb(n)} ${mot}${n > 1 ? 's' : ''}`;
+const dateDe = iso => { const [a, m, j] = iso.split('-').map(Number); return new Date(a, m - 1, j); };
+const dateFr = iso => iso.split('-').reverse().join('/');
+const pastilles = (b, e) => b.map(x => `<span class="b">${x}</span>`).join('') + '<span class="sep"></span>' + e.map(x => `<span class="e" title="étoile">${x}</span>`).join('');
+const comb = (n, k) => { let r = 1; for (let i = 1; i <= k; i++) r = r * (n - k + i) / i; return Math.round(r); };
+const parDate = new Map(T.map(t => [t[0], t]));
+const dernierT = T[T.length - 1];
+
+/* ---------- 3D et animations ---------- */
+const MOUVEMENT = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+function compter(el, cible, fmt, duree = 1500) {   // compteur qui monte jusqu'à la valeur
+  if (!MOUVEMENT) { el.textContent = fmt(cible); return; }
+  const t0 = performance.now();
+  (function pas(t) { const k = Math.min(1, (t - t0) / duree); el.textContent = fmt(cible * (1 - (1 - k) ** 3)); if (k < 1) requestAnimationFrame(pas); })(t0);
+}
+function boucle(el, image) {   // n'anime que lorsque l'élément est à l'écran
+  let visible = false, dernier = 0, id = 0;
+  const tour = t => { id = 0; if (!visible || document.hidden) return; const dt = Math.min(0.033, (t - dernier) / 1000 || 0.016); dernier = t; image(dt); if (MOUVEMENT) id = requestAnimationFrame(tour); };
+  const relance = () => { if (visible && !id) { dernier = performance.now(); id = requestAnimationFrame(tour); } };
+  new IntersectionObserver(e => { visible = e[0].isIntersecting; relance(); }).observe(el);
+  document.addEventListener('visibilitychange', relance);
+  return relance;
+}
+function moteur3D(el, fov) {
+  const L = el.clientWidth, H = el.clientHeight || L;
+  const rendu = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  rendu.setPixelRatio(Math.min(devicePixelRatio, 2)); rendu.setSize(L, H); el.appendChild(rendu.domElement);
+  const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(fov, L / H, 0.1, 100);
+  addEventListener('resize', () => { const l = el.clientWidth, h = el.clientHeight; if (!l || !h) return; rendu.setSize(l, h); cam.aspect = l / h; cam.updateProjectionMatrix(); });
+  return { rendu, scene, cam };
+}
+function glisser(el, tourner) {   // faire glisser pour tourner
+  let x0 = null;
+  el.addEventListener('pointerdown', e => { x0 = e.clientX; el.style.cursor = 'grabbing'; });
+  addEventListener('pointermove', e => { if (x0 !== null) { tourner((e.clientX - x0) * 0.01); x0 = e.clientX; } });
+  addEventListener('pointerup', () => { x0 = null; el.style.cursor = 'grab'; });
+  return () => x0 !== null;
+}
+function textureBoule(n, bande, fond = '#f4f5f8') {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 128; const x = c.getContext('2d');
+  x.fillStyle = fond; x.fillRect(0, 0, 256, 128); x.fillStyle = bande; x.fillRect(0, 36, 256, 56);
+  x.font = 'bold 44px system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  for (const cx of [64, 192]) { x.fillStyle = '#ffffff'; x.beginPath(); x.arc(cx, 64, 34, 0, 7); x.fill(); x.fillStyle = '#0b0b0b'; x.fillText(n, cx, 67); }
+  return new THREE.CanvasTexture(c);
+}
+
+/* La machine : 50 boules brassées dans un globe ; les boules d'une grille en sortent. */
+function machine3D(el) {
+  const { rendu, scene, cam } = moteur3D(el, 38);
+  cam.position.set(0, 0.25, 7.8); cam.lookAt(0, 0.1, 0);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x1a2540, 0.85));
+  const soleil = new THREE.DirectionalLight(0xffffff, 0.9); soleil.position.set(3, 6, 5); scene.add(soleil);
+  const bleu = new THREE.PointLight(0x3987e5, 1.4, 20); bleu.position.set(-4, -1, 3); scene.add(bleu);
+  const dore = new THREE.PointLight(0xf2b530, 0.9, 20); dore.position.set(4, -2, 2); scene.add(dore);
+  const R = 1.75, r = 0.25, CY = 0.6, monde = new THREE.Group(); monde.position.y = CY; scene.add(monde);
+  monde.add(new THREE.Mesh(new THREE.SphereGeometry(R, 48, 32), new THREE.MeshPhongMaterial({ color: 0x9cc8ff, transparent: true, opacity: 0.09, shininess: 140, specular: 0xffffff, depthWrite: false })));
+  for (const [rx, rz] of [[Math.PI / 2, 0], [0.9, 0.5], [2.2, -0.5]]) {
+    const anneau = new THREE.Mesh(new THREE.TorusGeometry(R + 0.03, 0.012, 8, 96), new THREE.MeshBasicMaterial({ color: 0x5ad1ff, transparent: true, opacity: 0.55 }));
+    anneau.rotation.set(rx, 0, rz); monde.add(anneau);
+  }
+  const socle = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.15, 0.22, 48), new THREE.MeshPhongMaterial({ color: 0x23262f, shininess: 60 }));
+  socle.position.y = CY - R - 0.12; scene.add(socle);
+  const geo = new THREE.SphereGeometry(r, 24, 16), balles = [], hasard = k => (Math.random() - 0.5) * k;
+  for (let n = 1; n <= 50; n++) {
+    const mesh = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({ map: textureBoule(n, '#3987e5'), shininess: 90, specular: 0x666666 }));
+    do mesh.position.set(hasard(2), hasard(2), hasard(2)).multiplyScalar(R - r); while (mesh.position.length() > R - r);
+    monde.add(mesh);
+    balles.push({ mesh, v: new THREE.Vector3(hasard(3), hasard(3), hasard(3)), libre: true });
+  }
+  const tmp = new THREE.Vector3(), IDENT = new THREE.Quaternion(), sorties = [];
+  let minuteries = [];
+  function physique(dt) {
+    for (const b of balles) {
+      if (!b.libre) continue;
+      const p = b.mesh.position, v = b.v;
+      v.y -= 6 * dt;                                                                       // gravité
+      if (p.y < -R * 0.2) { v.y += (24 + 18 * Math.random()) * dt; v.x += hasard(16) * dt; v.z += hasard(16) * dt; }   // soufflerie
+      v.x -= p.z * 0.5 * dt; v.z += p.x * 0.5 * dt;                                        // tourbillon
+      v.multiplyScalar(1 - 0.25 * dt);
+      p.addScaledVector(v, dt);
+      const d = p.length();
+      if (d > R - r) { tmp.copy(p).divideScalar(d); p.copy(tmp).multiplyScalar(R - r); const vn = v.dot(tmp); if (vn > 0) v.addScaledVector(tmp, -1.8 * vn); }   // paroi
+      b.mesh.rotation.x += v.z * dt * 2; b.mesh.rotation.z -= v.x * dt * 2;
+    }
+    for (let i = 0; i < 50; i++) {                                                         // chocs entre boules
+      const a = balles[i]; if (!a.libre) continue;
+      for (let k = i + 1; k < 50; k++) {
+        const b = balles[k]; if (!b.libre) continue;
+        tmp.subVectors(b.mesh.position, a.mesh.position); const d = tmp.length();
+        if (d < 2 * r && d > 1e-6) {
+          tmp.divideScalar(d); const o = (2 * r - d) / 2;
+          a.mesh.position.addScaledVector(tmp, -o); b.mesh.position.addScaledVector(tmp, o);
+          const rel = b.v.dot(tmp) - a.v.dot(tmp);
+          if (rel < 0) { a.v.addScaledVector(tmp, 0.92 * rel); b.v.addScaledVector(tmp, -0.92 * rel); }
+        }
+      }
+    }
+  }
+  function animer(dt) {
+    for (const s of sorties) {
+      if (s.t >= 1) continue;
+      s.t = Math.min(1, s.t + dt * 1.5); const e = 1 - (1 - s.t) ** 3;
+      s.mesh.position.lerpVectors(s.de, s.vers, e); s.mesh.position.y += Math.sin(Math.PI * e) * 0.8;
+      s.mesh.quaternion.slerp(IDENT, 0.15); s.mesh.scale.setScalar(1 + 0.15 * e);
+      if (s.t >= 1) s.mesh.quaternion.copy(IDENT);
+    }
+  }
+  const place = i => new THREE.Vector3((i - 3) * 0.57 + (i >= 5 ? 0.1 : -0.05), CY - R - 0.62, 1.1);
+  function sortir(n, rang) {
+    const b = balles[n - 1]; if (!b.libre) return;
+    b.libre = false; scene.attach(b.mesh);
+    sorties.push({ mesh: b.mesh, balle: b, de: b.mesh.position.clone(), vers: place(rang), t: MOUVEMENT ? 0 : 0.999 });
+  }
+  function etoile(n, rang) {
+    const mesh = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({ map: textureBoule(n, '#c98500', '#f2b530'), shininess: 110, specular: 0x886600 }));
+    mesh.position.set(0, 3.4, 0.6); scene.add(mesh);
+    sorties.push({ mesh, de: mesh.position.clone(), vers: place(rang), t: MOUVEMENT ? 0 : 0.999 });
+  }
+  function melanger() {
+    minuteries.forEach(clearTimeout); minuteries = [];
+    for (const s of sorties) {
+      if (!s.balle) { scene.remove(s.mesh); continue; }
+      monde.attach(s.mesh); s.mesh.position.set(hasard(1), 0.9, hasard(1)); s.mesh.scale.setScalar(1);
+      s.balle.v.set(hasard(3), -2, hasard(3)); s.balle.libre = true;
+    }
+    sorties.length = 0; relance();
+  }
+  function tirer(boules, etoiles) {
+    melanger();
+    const pas = MOUVEMENT ? 520 : 0;
+    boules.forEach((n, i) => minuteries.push(setTimeout(() => { sortir(n, i); relance(); }, 700 + i * pas)));
+    etoiles.forEach((n, i) => minuteries.push(setTimeout(() => { etoile(n, 5 + i); relance(); }, 700 + (5 + i) * pas)));
+  }
+  const tenu = glisser(el, d => { monde.rotation.y += d; });
+  const relance = boucle(el, dt => { physique(dt); animer(dt); if (!tenu()) monde.rotation.y += dt * 0.15; rendu.render(scene, cam); });
+  return { tirer, melanger };
+}
+
+/* La carte : une colonne par numéro, d'autant plus haute et rouge que le numéro est joué par les autres. */
+function ville3D(el, valeurs, cols, mot) {
+  const { rendu, scene, cam } = moteur3D(el, 36);
+  const lignes = Math.ceil(valeurs.length / cols), pas = 1.05;
+  const rayon = (cols * 0.95 + (lignes > 1 ? 4 : 2.5)) * Math.max(1, (lignes > 1 ? 1.1 : 2.0) / cam.aspect);   // recule sur écran étroit
+  cam.position.set(0, rayon * (lignes > 1 ? 0.62 : 0.4), rayon * 0.95); cam.lookAt(0, 1, 0);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x101522, 0.9));
+  const soleil = new THREE.DirectionalLight(0xffffff, 0.8); soleil.position.set(5, 10, 6); scene.add(soleil);
+  const pivot = new THREE.Group(); scene.add(pivot);
+  pivot.add(new THREE.GridHelper(cols * pas + 2, cols + 2, 0x3a3c44, 0x23252c));
+  const dev = Math.max(...valeurs.map(v => Math.abs(v - 100)));
+  const froid = new THREE.Color(0x3987e5), neutre = new THREE.Color(0x4a4c55), chaud = new THREE.Color(0xe66767);
+  const colonnes = valeurs.map((v, i) => {
+    const k = (v - 100) / dev, h = 0.5 + (k + 1) * 1.4, c = neutre.clone().lerp(k < 0 ? froid : chaud, Math.abs(k));
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.78, 1, 0.78), new THREE.MeshPhongMaterial({ color: c, shininess: 70, emissive: c.clone().multiplyScalar(0.18) }));
+    const x = (i % cols - (cols - 1) / 2) * pas, z = (Math.floor(i / cols) - (lignes - 1) / 2) * pas;
+    m.position.set(x, 0, z); m.scale.y = 0.01; pivot.add(m);
+    const cv = document.createElement('canvas'); cv.width = 96; cv.height = 64; const g = cv.getContext('2d');
+    g.font = 'bold 40px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#f0efec'; g.fillText(i + 1, 48, 34);
+    const etiquette = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthTest: false }));
+    etiquette.scale.set(0.66, 0.44, 1); etiquette.position.set(x, h + 0.32, z); etiquette.material.opacity = 0; pivot.add(etiquette);
+    m.userData = { i, h, v, etiquette, base: c.clone().multiplyScalar(0.18) };
+    return m;
+  });
+  let pousse = MOUVEMENT ? 0 : 1, survol = null;
+  const rayonLaser = new THREE.Raycaster(), souris = new THREE.Vector2();
+  el.addEventListener('pointermove', e => {
+    const r = el.getBoundingClientRect(); souris.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+    rayonLaser.setFromCamera(souris, cam);
+    const touche = rayonLaser.intersectObjects(colonnes)[0];
+    if (survol) survol.material.emissive.copy(survol.userData.base);
+    survol = touche ? touche.object : null;
+    if (!survol) { bulle.style.display = 'none'; relance(); return; }
+    survol.material.emissive.setHex(0x666666);
+    const u = survol.userData;
+    bulle.innerHTML = `<b>${mot} ${u.i + 1}</b><br>Indice ${nb(u.v, 0)} : jouée ${u.v >= 100 ? nb(u.v - 100, 0) + ' % de plus' : nb(100 - u.v, 0) + ' % de moins'} que la moyenne`;
+    bulle.style.display = 'block';
+    bulle.style.left = Math.min(e.clientX + 14, innerWidth - bulle.offsetWidth - 8) + 'px'; bulle.style.top = Math.max(8, e.clientY - bulle.offsetHeight - 12) + 'px';
+    relance();
+  });
+  el.addEventListener('pointerleave', () => { bulle.style.display = 'none'; if (survol) survol.material.emissive.copy(survol.userData.base); survol = null; });
+  const tenu = glisser(el, d => { pivot.rotation.y += d; relance(); });
+  const relance = boucle(el, dt => {
+    if (pousse < 1) pousse = Math.min(1, pousse + dt * 0.7);
+    colonnes.forEach((m, i) => {
+      const e = Math.max(0, Math.min(1, pousse * 1.8 - i / colonnes.length * 0.8)), s = 1 - (1 - e) ** 3, h = Math.max(0.01, m.userData.h * s);
+      m.scale.y = h; m.position.y = h / 2; m.userData.etiquette.material.opacity = s;
+    });
+    if (!tenu() && !survol) pivot.rotation.y += dt * 0.12;
+    rendu.render(scene, cam);
+  });
+  return true;
+}
+
+/* ---------- En-tête ---------- */
+const aujourdhui = new Date(); aujourdhui.setHours(0, 0, 0, 0);
+const dernierJour = dateDe(dernierT[0]);
+let manquants = 0;
+for (const j = new Date(dernierJour); (j.setDate(j.getDate() + 1), j < aujourdhui);) if (j.getDay() === 2 || j.getDay() === 5) manquants++;
+if (manquants) {
+  $('perime').hidden = false;
+  $('perime').textContent = `Il manque ${pl(manquants, 'tirage')} depuis la dernière mise à jour. Ferme cette page et relance le raccourci EuroMillions pour les récupérer.`;
+}
+const prochainJour = new Date(Math.max(aujourdhui, dernierJour.getTime() + 864e5));
+while (prochainJour.getDay() !== 2 && prochainJour.getDay() !== 5) prochainJour.setDate(prochainJour.getDate() + 1);
+$('prochain').textContent = `${JOURS[prochainJour.getDay()]} ${prochainJour.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`;
+$('resume').textContent = `${nb(T.length)} tirages analysés, du ${dateFr(T[0][0])} au ${dateFr(dernierT[0])}. Source : FDJ.`;
+$('dernier-v').innerHTML = `<span class="boules moyen">${pastilles(dernierT.slice(1, 6), dernierT.slice(6, 8))}</span>`;
+$('dernier-l').textContent = `dernier tirage connu, ${JOURS[dernierJour.getDay()]} ${dateFr(dernierT[0])}`;
+$('pied').textContent = `Page générée le ${dateFr(D.genere.slice(0, 10))} à ${D.genere.slice(11)}.`;
+const cloture = new Date(prochainJour); cloture.setHours(20, 15, 0, 0);
+function compteARebours() {
+  const reste = cloture - Date.now();
+  if (reste <= 0) { $('compte').innerHTML = ''; $('compte-note').textContent = 'Les mises sont closes pour ce tirage. Relance la mise à jour après 23 h pour le résultat.'; return; }
+  const j = Math.floor(reste / 864e5), h = Math.floor(reste / 36e5) % 24, m = Math.floor(reste / 6e4) % 60, s = Math.floor(reste / 1e3) % 60;
+  $('compte').innerHTML = [[j, 'jours'], [h, 'heures'], [m, 'minutes'], [s, 'secondes']].map(([v, l]) => `<div><b>${String(v).padStart(2, '0')}</b><span>${l}</span></div>`).join('');
+  $('compte-note').textContent = 'avant la clôture des mises, à 20 h 15';
+}
+compteARebours(); setInterval(compteARebours, 1000);
+
+/* ---------- Modèle de popularité (calculé par l'agent) ---------- */
+const M = D.modele;
+function motifsDe(b, prec) {
+  const s = [...b].sort((x, y) => x - y), m = { suite: 0, terminaison: 0, dizaine: 0, repris: s.filter(x => prec.includes(x)).length };
+  for (let i = 0; i < s.length; i++) for (let k = i + 1; k < s.length; k++) {
+    if (s[k] - s[i] === 1) m.suite++;
+    if (s[k] % 10 === s[i] % 10) m.terminaison++;
+    if (Math.floor((s[k] - 1) / 10) === Math.floor((s[i] - 1) / 10)) m.dizaine++;
+  }
+  return m;
+}
+function indiceGrille(b, e, prec = []) {
+  let l = 0;
+  b.forEach(x => l += M.boules[x - 1]); e.forEach(x => l += M.etoiles[x - 1]);
+  l += M.paires[[...e].sort((x, y) => x - y).join('-')] || 0;
+  const m = motifsDe(b, prec); for (const k in M.motifs) l += M.motifs[k] * m[k];
+  return Math.exp(l);
+}
+const fois = i => i < 1 ? `${nb(1 / i, 1)} fois moins jouée que la moyenne` : `${nb(i, 1)} fois plus jouée que la moyenne`;
+
+/* ---------- L'agent ---------- */
+const jackpot = d => D.jackpots[d] ? `<b>${nb(D.jackpots[d], D.jackpots[d] % 1 ? 1 : 0)} M€</b> à gagner` : '';
+const aVenir = D.agent.filter(g => !parDate.has(g.date));
+$('agent-grilles').innerHTML = aVenir.map((g, i) =>
+  `<div class="vedette"><div class="sur">Grille de l'agent · ${JOURS[dateDe(g.date).getDay()]} ${dateFr(g.date)}</div>` +
+  `<div class="jackpot${i ? ' petit-j' : ''}">${jackpot(g.date) || (i ? 'Montant connu après le tirage précédent' : 'Montant pas encore relevé')}</div>` +
+  `<div class="boules ${i ? 'moyen' : 'geant'}" style="margin:${i ? 8 : 16}px 0 ${i ? 4 : 12}px">${pastilles(g.boules, g.etoiles)}</div>` +
+  `<div class="sous">environ ${fois(g.indice)}</div></div>`).join('') ||
+  '<div class="vedette"><p class="sous">Pas de grille en attente : relance la mise à jour.</p></div>';
+{
+  const g = aVenir[0], jp = g && D.jackpots[g.date];
+  if (jp) { compter($('hero-jackpot'), jp, v => nb(v) + ' M€'); $('hero-jackpot-l').textContent = 'à gagner, montant annoncé par la FDJ'; }
+  let M3 = null;
+  try { if (window.THREE) M3 = machine3D($('scene-machine')); } catch (e) { M3 = null; }
+  if (!M3) $('machine').style.display = 'none';
+  else {
+    const grilleAgent = () => { const a = aVenir[0] || D.agent[D.agent.length - 1]; if (a) M3.tirer(a.boules, a.etoiles); };
+    $('m-agent').onclick = grilleAgent;
+    $('m-hasard').onclick = () => { const b = new Set(), e = new Set(); while (b.size < 5) b.add(1 + Math.floor(Math.random() * 50)); while (e.size < 2) e.add(1 + Math.floor(Math.random() * 12)); M3.tirer([...b].sort((x, y) => x - y), [...e].sort((x, y) => x - y)); };
+    $('m-melanger').onclick = M3.melanger;
+    setTimeout(grilleAgent, 1600);
+  }
+}
+{
+  let joues = 0, bonnesB = 0, bonnesE = 0;
+  $('t-agent').innerHTML = '<thead><tr><th>Tirage</th><th class="n">Jackpot annoncé</th><th>Grille proposée</th><th>Résultat</th></tr></thead><tbody>' +
+    [...D.agent].reverse().map(g => {
+      const t = parDate.get(g.date);
+      let res = 'à venir';
+      if (t) {
+        const b = g.boules.filter(x => t.slice(1, 6).includes(x)).length, e = g.etoiles.filter(x => t.slice(6, 8).includes(x)).length;
+        joues++; bonnesB += b; bonnesE += e;
+        res = `${pl(b, 'bonne')} ${b > 1 ? 'boules' : 'boule'}, ${pl(e, 'bonne')} ${e > 1 ? 'étoiles' : 'étoile'}`;
+      }
+      const jp = D.jackpots[g.date];
+      return `<tr><td>${dateFr(g.date)}</td><td class="n">${jp ? nb(jp, jp % 1 ? 1 : 0) + ' M€' : '—'}</td><td><span class="boules">${pastilles(g.boules, g.etoiles)}</span></td><td>${res}</td></tr>`;
+    }).join('') + '</tbody>';
+  $('agent-bilan').textContent = joues
+    ? `Sur ${pl(joues, 'tirage')} : ${nb(bonnesB / joues, 2)} bonne boule par tirage en moyenne (le hasard donne 0,50) et ${nb(bonnesE / joues, 2)} bonne étoile (le hasard donne 0,33).`
+    : `Aucun tirage passé pour l'instant : le bilan apparaîtra après le premier tirage.`;
+}
+
+/* ---------- Teste ta grille ---------- */
+const RANGS = { '5-2': 1, '5-1': 2, '5-0': 3, '4-2': 4, '4-1': 5, '3-2': 6, '4-0': 7, '2-2': 8, '3-1': 9, '3-0': 10, '1-2': 11, '2-1': 12, '2-0': 13 };
+const NOM_RANG = ['', '5 boules + 2 étoiles', '5 boules + 1 étoile', '5 boules', '4 boules + 2 étoiles', '4 boules + 1 étoile', '3 boules + 2 étoiles', '4 boules', '2 boules + 2 étoiles', '3 boules + 1 étoile', '3 boules', '1 boule + 2 étoiles', '2 boules + 1 étoile', '2 boules'];
+const choix = { b: new Set(), e: new Set(), couleur: 'pop' };
+function teinte(v, max) {   // v : log de popularité ; bleu = peu jouée, rouge = très jouée
+  const f = Math.min(1, Math.abs(v) / max);
+  return `<i style="background:${v < 0 ? 'var(--froid)' : 'var(--chaud)'};opacity:${(0.75 * f).toFixed(2)}"></i>`;
+}
+function plateau() {
+  const maxB = Math.max(...M.boules.map(Math.abs)), maxE = Math.max(...M.etoiles.map(Math.abs));
+  const cases = (n, set, vals, max) => Array.from({ length: n }, (_, i) =>
+    `<button class="case" data-n="${i + 1}" aria-pressed="${set.has(i + 1)}">${choix.couleur === 'pop' ? teinte(vals[i], max) : ''}<span>${i + 1}</span></button>`).join('');
+  $('p-boules').innerHTML = cases(50, choix.b, M.boules, maxB);
+  $('p-etoiles').innerHTML = cases(12, choix.e, M.etoiles, maxE);
+  $('echelle').style.visibility = choix.couleur === 'pop' ? 'visible' : 'hidden';
+  verdict();
+}
+function verdict() {
+  const b = [...choix.b].sort((x, y) => x - y), e = [...choix.e].sort((x, y) => x - y);
+  if (b.length < 5 || e.length < 2) {
+    $('verdict').innerHTML = `<div class="sur">Ta grille</div><p class="verdict">${b.length} / 5 numéros, ${e.length} / 2 étoiles</p><p class="sous">Complète la grille pour voir le résultat.</p>`;
+    return;
+  }
+  const ind = indiceGrille(b, e, dernierT.slice(1, 6)), pos = Math.max(0, Math.min(100, 50 + 50 * Math.log(ind) / Math.log(4)));
+  let mise = 0, gains = 0, gagnantes = 0, meilleur = 0, meilleurTxt = '';
+  const parRang = Array(14).fill(0), cDates = [], cNet = [];
+  for (const t of T) {
+    const g = D.gains[t[0]]; if (!g) continue;
+    mise += 2.5;
+    const r = RANGS[b.filter(x => t.slice(1, 6).includes(x)).length + '-' + e.filter(x => t.slice(6, 8).includes(x)).length];
+    cDates.push(t[0]); cNet.push(gains + (r ? g[r - 1] : 0) - mise);
+    if (!r) continue;
+    gagnantes++; parRang[r]++; gains += g[r - 1];
+    if (g[r - 1] >= meilleur) { meilleur = g[r - 1]; meilleurTxt = `${NOM_RANG[r]} le ${dateFr(t[0])}`; }
+  }
+  const n = mise / 2.5;
+  $('verdict').innerHTML = `<div class="sur">Ta grille</div><div class="boules moyen" style="margin:8px 0">${pastilles(b, e)}</div>` +
+    `<p class="verdict">Environ ${fois(ind)}</p>` +
+    `<div class="jauge"><b style="left:${pos}%"></b></div><div class="jauge-l"><span>4 fois moins</span><span>moyenne</span><span>4 fois plus</span></div>` +
+    `<h3>Si tu l'avais jouée à chaque tirage depuis 2016</h3>` +
+    `<div class="hb"><div>Misé</div><div class="piste"><div class="rempli neutre" style="width:100%"></div></div><div class="val">${eur(mise)}</div>` +
+    `<div>Gagné</div><div class="piste"><div class="rempli" style="width:${Math.min(100, 100 * gains / mise)}%"></div></div><div class="val">${eur(gains)}</div></div>` +
+    `<p class="sous">${pl(gagnantes, 'tirage')} gagnant${gagnantes > 1 ? 's' : ''} sur ${nb(n)} (${pct(gagnantes / n)}).` +
+    (gagnantes ? ` Meilleur gain : ${eur(meilleur)} (${meilleurTxt}).` : '') + `</p>` +
+    `<div class="graph" id="g-magrille"></div>` +
+    `<p class="petit">Ce passé ne dit rien du prochain tirage : la chance de gagner est la même pour toutes les grilles. Seule la ligne « jouée par les autres » dépend de ton choix.</p>`;
+  courbe($('g-magrille'), [{ couleur: 'var(--serie)', v: cNet }], { x: cDates, h: 200, titre: 'Résultat cumulé de ta grille', fmt: v => nb(v) + ' €',
+    info: i => `<b>${dateFr(cDates[i])}</b><br>Résultat cumulé : ${signe(cNet[i], 2)} €` });
+}
+for (const [id, set, max] of [['p-boules', choix.b, 5], ['p-etoiles', choix.e, 2]]) {
+  $(id).onclick = ev => {
+    const c = ev.target.closest('.case'); if (!c) return;
+    const n = +c.dataset.n;
+    if (set.has(n)) set.delete(n); else if (set.size < max) set.add(n); else return;
+    c.setAttribute('aria-pressed', set.has(n)); verdict();
+  };
+}
+function poser(b, e) { choix.b.clear(); choix.e.clear(); b.forEach(x => choix.b.add(x)); e.forEach(x => choix.e.add(x)); plateau(); }
+const alea = n => { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; };
+const tirer = (k, n) => { const s = new Set(); while (s.size < k) s.add(1 + alea(n)); return [...s]; };
+$('g-agent').onclick = () => { const g = aVenir[0] || D.agent[D.agent.length - 1]; if (g) poser(g.boules, g.etoiles); };
+$('g-hasard').onclick = () => poser(tirer(5, 50), tirer(2, 12));
+$('g-vider').onclick = () => poser([], []);
+plateau();
+
+/* ---------- Barres horizontales ---------- */
+function barresH(el, lignes) {
+  const max = Math.max(...lignes.map(l => l.v));
+  el.innerHTML = lignes.map(l => `<div>${l.nom}</div><div class="piste"><div class="rempli${l.neutre ? ' neutre' : ''}" style="width:${100 * l.v / max}%"></div></div><div class="val">${l.txt}</div>`).join('');
+}
+barresH($('dist-boules'), [0, 1, 2, 3, 4, 5].map(k => {
+  const p = comb(5, k) * comb(45, 5 - k) / comb(50, 5);
+  return { nom: `${k} bonne${k > 1 ? 's' : ''} boule${k > 1 ? 's' : ''}`, v: p, txt: p >= 0.001 ? pct(p, 1) : pct(p, p >= 0.00001 ? 3 : 6) };
+}));
+barresH($('dist-etoiles'), [0, 1, 2].map(k => {
+  const p = comb(2, k) * comb(10, 2 - k) / comb(12, 2);
+  return { nom: `${k} bonne${k > 1 ? 's' : ''} étoile${k > 1 ? 's' : ''}`, v: p, txt: pct(p, 1) };
+}));
+
+/* ---------- Statistiques par numéro ---------- */
+function statistiques(lignes, colonnes, nmax) {
+  const n = lignes.length, sorties = Array(nmax + 1).fill(0), dernier = Array(nmax + 1).fill(-1);
+  lignes.forEach((t, i) => colonnes.forEach(c => { sorties[t[c]]++; dernier[t[c]] = i; }));
+  const p = colonnes.length / nmax, attendu = n * p, sigma = Math.sqrt(n * p * (1 - p));
+  const nums = [];
+  for (let x = 1; x <= nmax; x++) nums.push({
+    num: x, sorties: sorties[x], part: sorties[x] / n,
+    retard: dernier[x] < 0 ? n : n - 1 - dernier[x],
+    derniere: dernier[x] < 0 ? null : lignes[dernier[x]][0],
+  });
+  return { n, attendu, sigma, retardTheorique: (1 - p) / p, nums };
+}
+function lignesPour(periode, type) {
+  if (periode === '200') return T.slice(-200);
+  if (periode === 'regles' || type === 'etoiles') return T.filter(t => t[0] >= D.debut_etoiles_12);
+  return T;
+}
+
+/* ---------- Graphique en barres verticales (SVG) ---------- */
+const bulle = $('bulle');
+function graduations(max) {
+  const brut = max / 4, p = 10 ** Math.floor(Math.log10(brut));
+  const pas = [1, 2, 5, 10].map(k => k * p).find(k => k >= brut);
+  const g = []; for (let v = 0; v <= Math.ceil(max / pas) * pas + 1e-9; v += pas) g.push(v);
+  return g;
+}
+function graphique(el, items, o) {
+  const L = Math.max(300, el.clientWidth), H = 220, m = { g: 38, d: 8, h: 12, b: 22 };
+  const grad = graduations(Math.max(...items.map(i => i.v), o.bande ? o.bande[1] : 0, o.ref || 0, 1));
+  const max = grad[grad.length - 1], li = L - m.g - m.d, hi = H - m.h - m.b, pas = li / items.length;
+  const lb = Math.max(2, Math.min(26, pas - 2)), y = v => m.h + hi * (1 - v / max), bas = m.h + hi;
+  const saut = Math.ceil(15 / pas);
+  let s = `<svg viewBox="0 0 ${L} ${H}" height="${H}" role="img" aria-label="${o.titre}">`;
+  for (const g of grad) s += `<line x1="${m.g}" x2="${L - m.d}" y1="${y(g)}" y2="${y(g)}" stroke="var(--grid)"/><text x="${m.g - 6}" y="${y(g) + 4}" text-anchor="end">${nb(g)}</text>`;
+  if (o.bande) s += `<rect x="${m.g}" width="${li}" y="${y(o.bande[1])}" height="${y(Math.max(0, o.bande[0])) - y(o.bande[1])}" fill="var(--bande)"/>`;
+  items.forEach((it, i) => {
+    const x = m.g + i * pas + (pas - lb) / 2, yy = y(it.v), r = Math.min(3, lb / 2, bas - yy);
+    s += `<rect class="cible" data-i="${i}" x="${m.g + i * pas}" y="${m.h}" width="${pas}" height="${hi}" fill="transparent"/>`;
+    s += `<path class="barre" pointer-events="none" d="M${x},${bas}V${yy + r}Q${x},${yy} ${x + r},${yy}H${x + lb - r}Q${x + lb},${yy} ${x + lb},${yy + r}V${bas}Z"/>`;
+    if (i % saut === 0) s += `<text x="${x + lb / 2}" y="${H - 6}" text-anchor="middle">${it.nom}</text>`;
+  });
+  if (o.ref != null) s += `<line x1="${m.g}" x2="${L - m.d}" y1="${y(o.ref)}" y2="${y(o.ref)}" stroke="var(--ref)" stroke-width="2" stroke-dasharray="6 4" pointer-events="none"/>`;
+  s += `<line x1="${m.g}" x2="${L - m.d}" y1="${bas}" y2="${bas}" stroke="var(--axis)"/></svg>`;
+  el.innerHTML = s;
+  el.onmousemove = e => {
+    const c = e.target.closest('.cible');
+    if (!c) { bulle.style.display = 'none'; return; }
+    bulle.innerHTML = items[+c.dataset.i].info;
+    bulle.style.display = 'block';
+    bulle.style.left = Math.min(e.clientX + 14, innerWidth - bulle.offsetWidth - 8) + 'px';
+    bulle.style.top = (e.clientY - bulle.offsetHeight - 12 < 0 ? e.clientY + 16 : e.clientY - bulle.offsetHeight - 12) + 'px';
+  };
+  el.onmouseleave = () => { bulle.style.display = 'none'; };
+}
+
+/* ---------- Graphique en courbes (SVG), avec réticule ---------- */
+function echelle(min, max) {
+  if (max - min < 1e-9) { min -= 1; max += 1; }
+  const brut = (max - min) / 5, p = 10 ** Math.floor(Math.log10(brut)), pas = [1, 2, 5, 10].map(k => k * p).find(k => k >= brut);
+  return [Math.floor(min / pas) * pas, Math.ceil(max / pas) * pas, pas];
+}
+function courbe(el, series, o) {   // series : [{couleur, v: [...], fond}], o.x : dates ISO, o.bande : [bas[], haut[]], o.info(i)
+  const n = o.x.length, L = Math.max(300, el.clientWidth), H = o.h || 280, m = { g: 54, d: 12, h: 12, b: 24 };
+  let min = Infinity, max = -Infinity;
+  for (const s of series) for (const v of s.v) { if (v < min) min = v; if (v > max) max = v; }
+  if (o.bande) { min = Math.min(min, ...o.bande[0]); max = Math.max(max, ...o.bande[1]); }
+  const [bas, haut, pas] = echelle(Math.min(min, 0), Math.max(max, 0));
+  const li = L - m.g - m.d, hi = H - m.h - m.b, x = i => m.g + li * i / Math.max(1, n - 1), y = v => m.h + hi * (1 - (v - bas) / (haut - bas));
+  const chemin = v => { let d = ''; for (let i = 0; i < n; i++) d += (i ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v[i]).toFixed(1); return d; };
+  let s = `<svg viewBox="0 0 ${L} ${H}" height="${H}" role="img" aria-label="${o.titre}">`;
+  for (let g = bas; g <= haut + 1e-9; g += pas) s += `<line x1="${m.g}" x2="${L - m.d}" y1="${y(g)}" y2="${y(g)}" stroke="${Math.abs(g) < 1e-9 ? 'var(--axis)' : 'var(--grid)'}" stroke-width="${Math.abs(g) < 1e-9 ? 1.5 : 1}"/><text x="${m.g - 6}" y="${y(g) + 4}" text-anchor="end">${(o.fmt || nb)(g)}</text>`;
+  let dernierX = -99;
+  for (let i = 1; i < n; i++) if (o.x[i].slice(0, 4) !== o.x[i - 1].slice(0, 4) && x(i) - dernierX > 46) { dernierX = x(i); s += `<line x1="${x(i)}" x2="${x(i)}" y1="${m.h + hi}" y2="${m.h + hi + 4}" stroke="var(--axis)"/><text x="${x(i)}" y="${H - 6}" text-anchor="middle">${o.x[i].slice(0, 4)}</text>`; }
+  if (o.bande) { let d = ''; for (let i = 0; i < n; i++) d += (i ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(o.bande[1][i]).toFixed(1); for (let i = n - 1; i >= 0; i--) d += 'L' + x(i).toFixed(1) + ',' + y(o.bande[0][i]).toFixed(1); s += `<path d="${d}Z" fill="var(--bande)"/>`; }
+  for (const se of series.filter(q => q.fond)) s += `<path class="ligne fond" d="${chemin(se.v)}" stroke="${se.couleur}"/>`;
+  const devant = series.filter(q => !q.fond);
+  for (const se of devant) s += `<path class="ligne" d="${chemin(se.v)}" stroke="${se.couleur}"/>`;
+  s += `<line class="reticule" y1="${m.h}" y2="${m.h + hi}" stroke="var(--ink2)" stroke-dasharray="3 3" visibility="hidden"/>` +
+    devant.map(se => `<circle class="point" r="4.5" fill="${se.couleur}" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>`).join('') +
+    `<rect class="zone" x="${m.g}" y="${m.h}" width="${li}" height="${hi}" fill="transparent"/></svg>`;
+  el.innerHTML = s;
+  const ret = el.querySelector('.reticule'), points = [...el.querySelectorAll('.point')];
+  el.onmousemove = e => {
+    const r = el.querySelector('svg').getBoundingClientRect(), px = (e.clientX - r.left) * L / r.width;
+    const i = Math.max(0, Math.min(n - 1, Math.round((px - m.g) / li * (n - 1))));
+    ret.setAttribute('x1', x(i)); ret.setAttribute('x2', x(i)); ret.setAttribute('visibility', 'visible');
+    points.forEach((c, k) => { c.setAttribute('cx', x(i)); c.setAttribute('cy', y(devant[k].v[i])); c.setAttribute('visibility', 'visible'); });
+    bulle.innerHTML = o.info(i); bulle.style.display = 'block';
+    bulle.style.left = Math.min(e.clientX + 14, innerWidth - bulle.offsetWidth - 8) + 'px';
+    bulle.style.top = Math.max(8, e.clientY - bulle.offsetHeight - 12) + 'px';
+  };
+  el.onmouseleave = () => { bulle.style.display = 'none'; ret.setAttribute('visibility', 'hidden'); points.forEach(c => c.setAttribute('visibility', 'hidden')); };
+}
+const signe = (v, d = 1) => (v >= 0 ? '+' : '−') + nb(Math.abs(v), d);
+const cumul = (v, f) => { let s = 0; return v.map(x => s += f(x)); };
+
+function dessinerEquity() {
+  const c = D.entrainement && D.entrainement.simulation.courbe;
+  if (!c) return;
+  $('bloc-equity').hidden = false;
+  const noms = [['agent', "Stratégie de l'agent", 'var(--serie)'], ['hasard', 'Grilles au hasard', '#d95926'], ['populaires', 'Numéros les plus joués', '#199e70']];
+  const series = noms.map(([k, nom, couleur]) => ({ nom, couleur, v: cumul(c[k], g => g - 2.5) }));
+  $('leg-equity').innerHTML = series.map(s => `<span><i class="l-serie" style="background:${s.couleur}"></i>${s.nom} : ${signe(s.v[s.v.length - 1], 0)} €</span>`).join('');
+  courbe($('g-equity'), series, { x: c.dates, titre: 'Résultat cumulé simulé', fmt: v => nb(v) + ' €',
+    info: i => `<b>${dateFr(c.dates[i])}</b>` + series.map(s => `<br>${s.nom} : ${signe(s.v[i], 0)} €`).join('') });
+  $('note-equity').textContent = `Gains moins mises, cumulés tirage après tirage, pour une grille à 2,50 € par tirage (moyenne de ${D.entrainement.simulation.grilles_par_tirage} grilles simulées par stratégie). ` +
+    `Les trois courbes descendent : le jeu reprend plus qu'il ne rend hors gros lots. L'agent descend un peu moins vite parce que ses numéros, quand ils sortent, se partagent entre moins de gagnants.`;
+}
+
+/* ---------- Stratégies de mise ---------- */
+function valeurGrille(jackpotM, indice, jour) {   // valeur moyenne d'une grille, en euros
+  const V = D.valeur, lambda = (V.grilles[jour] || V.grilles.vendredi) / V.combinaisons * indice;   // autres gagnants attendus du jackpot
+  const part = (1 - Math.exp(-lambda)) / lambda;                                                    // part du jackpot gardée en moyenne
+  return { valeur: V.hors_jackpot + jackpotM * 1e6 / V.combinaisons * part, part, equilibre: (V.prix - V.hors_jackpot) * V.combinaisons / part / 1e6 };
+}
+function dessinerStrategies() {
+  const S = D.strategies, V = D.valeur, g = aVenir[0];
+  const jp = g && D.jackpots[g.date];
+  if (jp) {
+    const jour = JOURS[dateDe(g.date).getDay()], a = valeurGrille(jp, g.indice, jour), m = valeurGrille(jp, 1, jour);
+    const tuile = (v, l) => `<div class="tuile"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+    $('val-titre').textContent = `Ce que vaut une grille à 2,50 € au tirage du ${jour} ${dateFr(g.date)} (${nb(jp)} M€ annoncés)`;
+    $('val-tuiles').innerHTML = tuile(eur(a.valeur), "valeur moyenne de la grille de l'agent") + tuile(eur(m.valeur), "valeur moyenne d'une grille ordinaire") +
+      tuile(signe(a.valeur - V.prix, 2) + ' €', "résultat moyen par grille de l'agent") + tuile(nb(a.equilibre) + ' M€', "jackpot qu'il faudrait pour être à l'équilibre");
+    $('val-note').textContent = `Valeur moyenne = ${eur(V.hors_jackpot)} de petits lots en moyenne, plus le jackpot multiplié par la chance de le gagner (1 sur 139 838 160) et par la part gardée après partage ` +
+      `(${pct(a.part, 0)} pour la grille de l'agent, ${pct(m.part, 0)} pour une grille ordinaire, avec environ ${nb(V.grilles[jour] / 1e6, 0)} millions de grilles jouées un ${jour}). ` +
+      `Cette moyenne repose presque entièrement sur le jackpot, qui en pratique ne tombe pas : hors jackpot, une grille rend ${eur(V.hors_jackpot)}. Le jackpot est plafonné à 250 M€, sous le seuil d'équilibre.`;
+  } else {
+    $('val-titre').textContent = 'Ce que vaut une grille à 2,50 €';
+    $('val-tuiles').innerHTML = ''; $('val-note').textContent = `Le calcul s'affichera dès que le montant du prochain jackpot sera relevé. Hors jackpot, une grille rend en moyenne ${eur(V.hors_jackpot)}.`;
+  }
+  const couleurs = { reguliere: 'var(--serie)', gros_jackpots: '#d95926', martingale: '#199e70', retard: '#c98500' };
+  const cles = Object.keys(S.strategies), series = cles.map(k => ({ nom: S.strategies[k].nom, couleur: couleurs[k], v: S.strategies[k].courbe }));
+  $('leg-strat').innerHTML = series.map(s => `<span><i class="l-serie" style="background:${s.couleur}"></i>${s.nom}</span>`).join('');
+  courbe($('g-strat'), series, { x: S.dates, titre: 'Résultat cumulé des stratégies', fmt: v => nb(v) + ' €',
+    info: i => `<b>${dateFr(S.dates[i])}</b>` + series.map(s => `<br>${s.nom.split(' :')[0].split(',')[0]} : ${signe(s.v[i], 0)} €`).join('') });
+  $('t-strat').innerHTML = '<thead><tr><th>Stratégie</th><th class="n">Misé</th><th class="n">Résultat</th><th class="n">Rendu pour 1 € misé</th><th class="n">Parcours gagnants</th></tr></thead><tbody>' +
+    cles.map(k => { const s = S.strategies[k]; return `<tr><td>${s.nom}</td><td class="n">${nb(s.mise)} €</td><td class="n">${signe(s.resultat, 0)} €</td><td class="n">${nb(s.retour, 2)} €</td><td class="n">${k === 'retard' ? (s.resultat > 0 ? 'oui' : 'non') : pct(s.parcours_gagnants, 1)}</td></tr>`; }).join('') + '</tbody>';
+  $('note-strat').textContent = `${nb(S.dates.length)} tirages rejoués aux gains réels. Pour les trois premières stratégies, ${S.parcours} parcours simulés avec des grilles au hasard ; la courbe et le résultat sont ceux du parcours médian. ` +
+    `« Gros jackpots » ne joue que ${nb(S.tirages_gros_jackpots)} tirages : elle perd moins parce qu'elle joue moins, pas parce qu'elle joue mieux. La martingale mise beaucoup plus et perd d'autant plus. Toutes rendent environ ${nb(S.strategies.reguliere.retour, 2)} € par euro misé.`;
+}
+
+const etat = { vue: window.THREE ? '3d' : 'courbe', periode: 'tout', tri: 'num', num: { boules: 7, etoiles: 7 } };
+const villes = {};
+for (const x of $('f-vue').children) { x.setAttribute('aria-pressed', x.dataset.v === etat.vue); if (x.dataset.v === '3d' && !window.THREE) x.style.display = 'none'; }
+function dessiner() {
+  const jeux = [
+    { type: 'boules', mot: 'Boule', mots: 'Boules', cols: [1, 2, 3, 4, 5], nmax: 50, g: 'g-b', sel: 'sel-b', v3: 'v3-b', titre: 'titre-b', table: 't-stats-b', pop: D.popularite.boules },
+    { type: 'etoiles', mot: 'Étoile', mots: 'Étoiles', cols: [6, 7], nmax: 12, g: 'g-e', sel: 'sel-e', v3: 'v3-e', titre: 'titre-e', table: 't-stats-e', pop: D.popularite.etoiles },
+  ];
+  $('bloc-periode').style.display = etat.vue === 'pop' || etat.vue === '3d' ? 'none' : '';
+  $('f-tri').style.display = etat.vue === 'courbe' || etat.vue === '3d' ? 'none' : '';
+  dessinerEquity();
+  dessinerStrategies();
+  for (const j of jeux) {
+    const st = statistiques(lignesPour(etat.periode, j.type), j.cols, j.nmax);
+    const trier = (items) => etat.tri === 'val' ? [...items].sort((a, b) => b.v - a.v || a.nom - b.nom) : items;
+    let items, o;
+    $(j.sel).style.display = etat.vue === 'courbe' ? '' : 'none';
+    $(j.v3).style.display = etat.vue === '3d' ? '' : 'none';
+    $(j.g).style.display = etat.vue === '3d' ? 'none' : '';
+    if (etat.vue === '3d') {
+      $(j.titre).textContent = `${j.mots} : à quel point chaque numéro est joué par les autres`;
+      if (!villes[j.type]) { try { villes[j.type] = ville3D($(j.v3), j.pop, j.type === 'boules' ? 10 : 12, j.mot); } catch (e) { villes[j.type] = true; } }
+    } else if (etat.vue === 'courbe') {
+      // Pour chaque numéro : sorties cumulées moins ce que donnerait le hasard, tirage après tirage.
+      const lignes = lignesPour(etat.periode, j.type), n = lignes.length, p = j.cols.length / j.nmax, choisi = etat.num[j.type];
+      const ecart = Array.from({ length: j.nmax + 1 }, () => new Array(n)), compte = Array(j.nmax + 1).fill(0);
+      lignes.forEach((t, i) => { j.cols.forEach(k => compte[t[k]]++); for (let x = 1; x <= j.nmax; x++) ecart[x][i] = compte[x] - (i + 1) * p; });
+      const large = lignes.map((_, i) => 1.96 * Math.sqrt((i + 1) * p * (1 - p)));
+      const series = [];
+      for (let x = 1; x <= j.nmax; x++) if (x !== choisi) series.push({ fond: true, couleur: 'var(--axis)', v: ecart[x] });
+      series.push({ couleur: 'var(--serie)', v: ecart[choisi] });
+      $(j.titre).textContent = `${j.mots} : avance ou retard du n° ${choisi} sur le hasard, tirage après tirage`;
+      $(j.sel).innerHTML = Array.from({ length: j.nmax }, (_, i) => `<button class="case" data-n="${i + 1}" aria-pressed="${i + 1 === choisi}"><span>${i + 1}</span></button>`).join('');
+      $(j.sel).onclick = e => { const c = e.target.closest('.case'); if (c) { etat.num[j.type] = +c.dataset.n; dessiner(); } };
+      courbe($(j.g), series, { x: lignes.map(t => t[0]), titre: `Écart cumulé de la ${j.mot.toLowerCase()} ${choisi}`, bande: [large.map(v => -v), large], fmt: v => signe(v, 0),
+        info: i => `<b>${j.mot} ${choisi}</b> · ${dateFr(lignes[i][0])}<br>${signe(ecart[choisi][i])} sortie${Math.abs(ecart[choisi][i]) >= 2 ? 's' : ''} par rapport au hasard` });
+    } else if (etat.vue === 'pop') {
+      $(j.titre).textContent = `${j.mots} : à quel point chaque numéro est joué par les autres (100 = moyenne)`;
+      items = j.pop.map((v, i) => ({ nom: i + 1, v, info: `<b>${j.mot} ${i + 1}</b><br>Indice ${nb(v, 0)} : jouée ${v >= 100 ? nb(v - 100, 0) + ' % de plus' : nb(100 - v, 0) + ' % de moins'} que la moyenne` }));
+      o = { titre: `Popularité par ${j.mot.toLowerCase()}`, ref: 100 };
+    } else if (etat.vue === 'freq') {
+      $(j.titre).textContent = `${j.mots} : nombre de sorties`;
+      items = st.nums.map(s => ({ nom: s.num, v: s.sorties, info: `<b>${j.mot} ${s.num}</b><br>${nb(s.sorties)} sorties sur ${nb(st.n)} tirages (${pct(s.part)})<br>Attendu : ${nb(st.attendu, 1)}` }));
+      o = { titre: `Sorties par ${j.mot.toLowerCase()}`, ref: st.attendu, bande: [st.attendu - 1.96 * st.sigma, st.attendu + 1.96 * st.sigma] };
+    } else {
+      $(j.titre).textContent = `${j.mots} : retard actuel (tirages depuis la dernière sortie)`;
+      items = st.nums.map(s => ({ nom: s.num, v: s.retard, info: `<b>${j.mot} ${s.num}</b><br>${s.retard === 0 ? 'Sortie au dernier tirage' : `Pas sortie depuis ${pl(s.retard, 'tirage')}`}${s.derniere ? `<br>Dernière sortie : ${dateFr(s.derniere)}` : ''}` }));
+      o = { titre: `Retard par ${j.mot.toLowerCase()}`, ref: st.retardTheorique };
+    }
+    if (items) graphique($(j.g), trier(items), o);
+    $(j.table).innerHTML = `<thead><tr><th>${j.mot}</th><th class="n">Sorties</th><th class="n">% des tirages</th><th class="n">Retard</th><th class="n">Joué par les autres</th><th>Dernière sortie</th></tr></thead><tbody>` +
+      st.nums.map(s => `<tr><td>${s.num}</td><td class="n">${nb(s.sorties)}</td><td class="n">${pct(s.part)}</td><td class="n">${s.retard}</td><td class="n">${nb(j.pop[s.num - 1], 0)}</td><td>${s.derniere ? dateFr(s.derniere) : '—'}</td></tr>`).join('') + '</tbody>';
+  }
+  $('legende').innerHTML = { '3d': '<span><i class="l-serie" style="background:var(--froid)"></i>colonne basse et bleue : peu jouée</span><span><i class="l-serie" style="background:var(--chaud)"></i>colonne haute et rouge : très jouée</span><span>Fais glisser pour tourner, survole une colonne pour le détail.</span>',
+    courbe: '<span><i class="l-serie" style="background:var(--serie)"></i>numéro choisi</span><span><i class="l-serie" style="background:var(--axis)"></i>les autres numéros</span><span><i class="l-bande"></i>fluctuation normale du hasard</span>',
+    pop: '<span><i class="l-ref"></i>numéro joué comme la moyenne</span>',
+    freq: '<span><i class="l-ref"></i>attendu si hasard pur</span><span><i class="l-bande"></i>fluctuation normale du hasard</span>',
+    ret: '<span><i class="l-ref"></i>retard moyen théorique</span>' }[etat.vue];
+  $('note-vue').textContent = etat.vue === 'pop' || etat.vue === '3d'
+    ? `Estimation à partir des ${nb(D.popularite.tirages)} tirages depuis le ${dateFr(D.popularite.depuis)} : quand des numéros très joués sortent, il y a plus de gagnants pour les mêmes mises. C'est la seule information de cette page qui sert à choisir une grille.`
+    : (etat.vue === 'courbe' ? `Clique un numéro pour voir sa courbe. Elle monte quand le numéro sort plus que prévu, descend quand il sort moins. Ces courbes ressemblent à des cours de bourse parce que ce sont des marches au hasard : leur passé ne dit pas où elles iront. ` : '') +
+      (etat.periode === 'tout' ? `Les étoiles sont comptées depuis le ${dateFr(D.debut_etoiles_12)} seulement : avant, il n'y en avait que 9 puis 11. ` : '') + `Sorties et retards décrivent le passé ; ils ne changent pas la probabilité du prochain tirage.`;
+}
+for (const [id, cle, suite] of [['f-vue', 'vue', dessiner], ['f-periode', 'periode', dessiner], ['f-tri', 'tri', dessiner], ['f-couleur', 'couleur', plateau]]) {
+  $(id).onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    (cle === 'couleur' ? choix : etat)[cle] = b.dataset.v;
+    for (const x of $(id).children) x.setAttribute('aria-pressed', x === b);
+    suite();
+  };
+}
+dessiner();
+let attente; addEventListener('resize', () => { clearTimeout(attente); attente = setTimeout(dessiner, 150); });
+
+/* ---------- Entraînement et tests ---------- */
+for (const [type, mot, id, titre] of [['boules', 'boules', 'bt-b', 'bt-titre-b'], ['etoiles', 'étoiles', 'bt-e', 'bt-titre-e']]) {
+  const r = D.backtest[type];
+  $(titre).textContent = `Chauds, froids, en retard : bonnes ${mot} par tirage`;
+  barresH($(id), [
+    { nom: 'Hasard pur (théorie)', v: r.theorie, txt: nb(r.theorie, 3), neutre: true },
+    { nom: 'Numéros chauds', v: r.chauds, txt: nb(r.chauds, 3) },
+    { nom: 'Numéros froids', v: r.froids, txt: nb(r.froids, 3) },
+    { nom: 'Numéros en retard', v: r.en_retard, txt: nb(r.en_retard, 3) },
+  ]);
+}
+{
+  const b = D.equilibre.boules, e = D.equilibre.etoiles;
+  $('equilibre').innerHTML = `<b>Le tirage est-il équilibré ?</b> Comparé à 1 000 historiques simulés avec un hasard parfait, ` +
+    `${pct(b.part_aussi_desequilibres, 0)} sont au moins aussi déséquilibrés que le vrai pour les boules, ${pct(e.part_aussi_desequilibres, 0)} pour les étoiles. ` +
+    `En dessous de 5 % on soupçonnerait un biais ; au-dessus, les écarts s'expliquent par le hasard seul.`;
+}
+const E = D.entrainement;
+if (E) {
+  const pr = E.prediction, si = E.simulation, va = E.validation, st = si.strategies, ec = si.ecart_agent_hasard, pa = si.parcours;
+  $('ent-intro').textContent = `Dernier entraînement le ${dateFr(E.date)}. Tout est jugé sur des tirages que l'agent n'avait pas vus au moment de décider.`;
+  barresH($('ent-pred'), [
+    { nom: 'Hasard pur (théorie)', v: pr.theorie, txt: nb(pr.theorie, 3), neutre: true },
+    { nom: 'Algorithme, tirages jamais vus', v: pr.algo_test, txt: nb(pr.algo_test, 3) },
+    { nom: 'Numéros chauds, sur leur propre passé', v: pr.chauds_passe, txt: nb(pr.chauds_passe, 3) },
+    { nom: 'Les mêmes, sur les tirages suivants', v: pr.chauds_futur, txt: nb(pr.chauds_futur, 3) },
+  ]);
+  $('ent-pred-note').textContent = `Algorithme entraîné sur les fréquences, les retards et les derniers tirages, puis testé sur ${nb(pr.tirages_test)} tirages jamais vus (marge d'erreur ± ${nb(2 * pr.algo_test_erreur, 2)}). ` +
+    `Il ne fait pas mieux que le hasard. Les numéros chauds paraissent bons sur le passé qui a servi à les choisir, puis retombent.`;
+  barresH($('ent-simu'), [
+    { nom: "Stratégie de l'agent", v: st.agent.retour, txt: pct(st.agent.retour) },
+    { nom: 'Grilles au hasard', v: st.hasard.retour, txt: pct(st.hasard.retour), neutre: true },
+    { nom: 'Numéros les plus joués', v: st.populaires.retour, txt: pct(st.populaires.retour) },
+  ]);
+  $('ent-simu-note').textContent = `${nb(si.tirages)} tirages rejoués du ${dateFr(si.debut)} au ${dateFr(si.fin)}, ${si.grilles_par_tirage} grilles par stratégie à chaque tirage, payées aux gains réels. ` +
+    `Écart agent − hasard : ${ec.euros >= 0 ? '+' : '−'}${eur(Math.abs(ec.euros))} par grille (marge d'erreur ± ${eur(2 * ec.erreur)}). ` +
+    `Une grille de l'agent par tirage : ${eur(pa.mise)} misés, ${eur(pa.gains)} gagnés. Toutes les stratégies perdent : aucune grille simulée n'a touché un gros lot.`;
+  $('ent-valid').innerHTML = `C'est la seule chose qui s'apprend vraiment. Part des écarts de gagnants que le modèle explique sur des années non vues : ` +
+    `<b>${pct(va.boules.apres)}</b> pour les boules et <b>${pct(va.etoiles.apres)}</b> pour les étoiles (${pct(va.etoiles.avant)} avant affinage).`;
+}
+
+/* ---------- Recherche d'une faille ---------- */
+const B = D.batterie;
+if (B) {
+  const alertes = B.tests.filter(t => t.verdict === 'alerte').length;
+  $('bat-intro').textContent = `${B.tests.length} façons dont le tirage pourrait ne pas être un pur hasard, testées sur ${nb(B.tirages)} tirages et refaites à chaque mise à jour. ` +
+    (alertes ? `${pl(alertes, 'alerte')} : à regarder de près.` : `Résultat : aucune faille détectée.`);
+  const signe = { rien: '○ rien', 'à surveiller': '◐ à surveiller', alerte: '● alerte' };
+  $('t-batterie').innerHTML = '<thead><tr><th>Ce qui est testé</th><th>Ce qu\'une faille voudrait dire</th><th class="n">p-valeur</th><th>Verdict</th></tr></thead><tbody>' +
+    B.tests.map(t => `<tr><td>${t.nom}</td><td class="sous">${t.sens}</td><td class="n">${nb(t.p, 3)}</td><td>${signe[t.verdict]}</td></tr>`).join('') + '</tbody>';
+  $('bat-note').textContent = `La p-valeur est la part des ${B.simulations} historiques simulés avec un hasard parfait qui sont au moins aussi étranges que le vrai. ` +
+    `Une alerte demande une p-valeur sous ${nb(B.seuil, 4)} (0,05 divisé par le nombre de tests) ; entre ce seuil et 0,05, c'est « à surveiller », ce qui arrive par chance à environ un test sur vingt. ` +
+    `Si une alerte apparaît un jour et persiste, ce serait la seule vraie raison de préférer certains numéros.`;
+}
+
+/* ---------- Calculateur : nombre de grilles ---------- */
+{
+  const TOTAL = 139838160;
+  let pLot = 0;
+  for (const cle in RANGS) { const [b, e] = cle.split('-').map(Number); pLot += comb(5, b) * comb(45, 5 - b) / comb(50, 5) * comb(2, e) * comb(10, 2 - e) / comb(12, 2); }
+  const calcul = () => {
+    const n = Math.max(1, Math.min(TOTAL, parseInt($('c-grilles').value.replace(/\D/g, ''), 10) || 1));
+    const tuile = (v, l) => `<div class="tuile"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+    $('c-resultat').innerHTML =
+      tuile(n >= TOTAL ? '100 %' : `1 sur ${nb(Math.round(TOTAL / n))}`, 'chance de gagner le jackpot à ce tirage') +
+      tuile(eur(2.5 * n), 'coût pour ce tirage') +
+      tuile(pct(1 - (1 - pLot) ** n, 1), 'chance de gagner au moins un lot, même le plus petit') +
+      tuile(`${nb(Math.round(TOTAL / n / 104))} ans`, 'attente moyenne avant un jackpot, en jouant aux 2 tirages chaque semaine');
+  };
+  $('c-grilles').oninput = calcul;
+  $('c-rapides').onclick = e => { const b = e.target.closest('button'); if (b) { $('c-grilles').value = b.dataset.v; calcul(); } };
+  calcul();
+}
+
+/* ---------- Tous les tirages ---------- */
+const annees = [...new Set(T.map(t => t[0].slice(0, 4)))].reverse();
+$('f-annee').innerHTML = '<option value="">Toutes</option>' + annees.map(a => `<option>${a}</option>`).join('');
+function tableTirages() {
+  const an = $('f-annee').value, nums = ($('f-nums').value.match(/\d+/g) || []).map(Number);
+  const sel = T.filter(t => (!an || t[0].startsWith(an)) && nums.every(x => t.slice(1, 6).includes(x))).reverse();
+  $('nb-tirages').textContent = pl(sel.length, 'tirage');
+  $('t-tirages').innerHTML = '<thead><tr><th>Date</th><th>Jour</th><th>Boules et étoiles</th></tr></thead><tbody>' +
+    sel.map(t => `<tr><td>${dateFr(t[0])}</td><td>${JOURS[dateDe(t[0]).getDay()]}</td><td><span class="boules">${pastilles(t.slice(1, 6), t.slice(6, 8))}</span></td></tr>`).join('') + '</tbody>';
+}
+$('f-annee').onchange = tableTirages; $('f-nums').oninput = tableTirages; tableTirages();
+
+/* ---------- Fond animé et apparition des sections ---------- */
+{
+  const c = $('fond'), x = c.getContext('2d'); let pts = [], enCours = false;
+  const taille = () => {
+    c.width = innerWidth; c.height = innerHeight;
+    pts = Array.from({ length: Math.round(innerWidth * innerHeight / 24000) }, () => ({ x: Math.random() * c.width, y: Math.random() * c.height, r: Math.random() * 1.4 + 0.3, v: Math.random() * 0.25 + 0.05, a: Math.random() * 0.45 + 0.12 }));
+  };
+  const image = () => {
+    x.clearRect(0, 0, c.width, c.height); x.fillStyle = '#9fd3ff';
+    for (const p of pts) { p.y -= p.v; if (p.y < -2) { p.y = c.height + 2; p.x = Math.random() * c.width; } x.globalAlpha = p.a; x.beginPath(); x.arc(p.x, p.y, p.r, 0, 7); x.fill(); }
+    enCours = MOUVEMENT && !document.hidden; if (enCours) requestAnimationFrame(image);
+  };
+  taille(); image();
+  addEventListener('resize', () => { taille(); if (!enCours) image(); });
+  document.addEventListener('visibilitychange', () => { if (!enCours) image(); });
+}
+if (MOUVEMENT && 'IntersectionObserver' in window) {
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('vu'); io.unobserve(e.target); } }), { threshold: 0.06 });
+  document.querySelectorAll('section, .tuiles, .vedette').forEach(s => { s.classList.add('rev'); io.observe(s); });
+}
+</script>
+</body>
+</html>
