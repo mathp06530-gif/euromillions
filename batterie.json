@@ -1,86 +1,86 @@
 {
- "date": "2026-11-12",
- "tirages": 1997,
- "tirages_etoiles": 1057,
+ "date": "2026-11-14",
+ "tirages": 1998,
+ "tirages_etoiles": 1058,
  "simulations": 300,
  "seuil": 0.0038,
  "tests": [
   {
    "nom": "Certaines boules sortent trop ou pas assez",
    "sens": "Une boule plus lourde ou plus légère que les autres.",
-   "p": 0.196,
+   "p": 0.193,
    "verdict": "rien"
   },
   {
    "nom": "Idem sur les 200 derniers tirages",
    "sens": "Un défaut du jeu de boules utilisé en ce moment.",
-   "p": 0.256,
+   "p": 0.189,
    "verdict": "rien"
   },
   {
    "nom": "Certaines paires de boules sortent trop ensemble",
    "sens": "Des boules qui se suivent dans la machine.",
-   "p": 0.189,
+   "p": 0.209,
    "verdict": "rien"
   },
   {
    "nom": "La première boule sortie est souvent la même",
    "sens": "Un défaut au démarrage de la machine.",
-   "p": 0.598,
+   "p": 0.618,
    "verdict": "rien"
   },
   {
    "nom": "Les boules diffèrent entre mardi et vendredi",
    "sens": "Deux machines ou deux jeux de boules inégaux.",
-   "p": 0.907,
+   "p": 0.89,
    "verdict": "rien"
   },
   {
    "nom": "Trop de pairs ou d'impairs dans un tirage",
    "sens": "Un déséquilibre entre deux groupes de boules.",
-   "p": 0.252,
+   "p": 0.279,
    "verdict": "rien"
   },
   {
    "nom": "Les boules du tirage précédent ressortent",
    "sens": "Un mélange insuffisant d'un tirage à l'autre.",
-   "p": 0.721,
+   "p": 0.757,
    "verdict": "rien"
   },
   {
    "nom": "Les boules d'il y a deux tirages ressortent",
    "sens": "Un cycle caché entre les tirages.",
-   "p": 0.817,
+   "p": 0.834,
    "verdict": "rien"
   },
   {
    "nom": "Trop ou pas assez de numéros qui se suivent",
    "sens": "Des boules voisines qui restent groupées.",
-   "p": 0.638,
+   "p": 0.611,
    "verdict": "rien"
   },
   {
    "nom": "La somme des boules est trop haute ou trop basse",
    "sens": "Les petits ou les grands numéros favorisés.",
-   "p": 0.91,
+   "p": 0.831,
    "verdict": "rien"
   },
   {
    "nom": "Certaines étoiles sortent trop ou pas assez",
    "sens": "Une étoile plus lourde ou plus légère.",
-   "p": 0.179,
+   "p": 0.156,
    "verdict": "rien"
   },
   {
    "nom": "Certaines paires d'étoiles sortent trop ensemble",
    "sens": "Des étoiles qui se suivent dans la machine.",
-   "p": 0.043,
-   "verdict": "à surveiller"
+   "p": 0.056,
+   "verdict": "rien"
   },
   {
    "nom": "Les étoiles du tirage précédent ressortent",
    "sens": "Un mélange insuffisant des étoiles.",
-   "p": 0.621,
+   "p": 0.638,
    "verdict": "rien"
   }
  ]
