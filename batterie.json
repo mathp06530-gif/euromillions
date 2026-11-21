@@ -1,26 +1,26 @@
 {
- "date": "2026-11-14",
- "tirages": 1998,
- "tirages_etoiles": 1058,
+ "date": "2026-11-21",
+ "tirages": 2000,
+ "tirages_etoiles": 1060,
  "simulations": 300,
  "seuil": 0.0038,
  "tests": [
   {
    "nom": "Certaines boules sortent trop ou pas assez",
    "sens": "Une boule plus lourde ou plus légère que les autres.",
-   "p": 0.193,
+   "p": 0.183,
    "verdict": "rien"
   },
   {
    "nom": "Idem sur les 200 derniers tirages",
    "sens": "Un défaut du jeu de boules utilisé en ce moment.",
-   "p": 0.189,
+   "p": 0.156,
    "verdict": "rien"
   },
   {
    "nom": "Certaines paires de boules sortent trop ensemble",
    "sens": "Des boules qui se suivent dans la machine.",
-   "p": 0.209,
+   "p": 0.243,
    "verdict": "rien"
   },
   {
@@ -32,55 +32,55 @@
   {
    "nom": "Les boules diffèrent entre mardi et vendredi",
    "sens": "Deux machines ou deux jeux de boules inégaux.",
-   "p": 0.89,
+   "p": 0.897,
    "verdict": "rien"
   },
   {
    "nom": "Trop de pairs ou d'impairs dans un tirage",
    "sens": "Un déséquilibre entre deux groupes de boules.",
-   "p": 0.279,
+   "p": 0.276,
    "verdict": "rien"
   },
   {
    "nom": "Les boules du tirage précédent ressortent",
    "sens": "Un mélange insuffisant d'un tirage à l'autre.",
-   "p": 0.757,
+   "p": 0.674,
    "verdict": "rien"
   },
   {
    "nom": "Les boules d'il y a deux tirages ressortent",
    "sens": "Un cycle caché entre les tirages.",
-   "p": 0.834,
+   "p": 0.811,
    "verdict": "rien"
   },
   {
    "nom": "Trop ou pas assez de numéros qui se suivent",
    "sens": "Des boules voisines qui restent groupées.",
-   "p": 0.611,
+   "p": 0.618,
    "verdict": "rien"
   },
   {
    "nom": "La somme des boules est trop haute ou trop basse",
    "sens": "Les petits ou les grands numéros favorisés.",
-   "p": 0.831,
+   "p": 0.894,
    "verdict": "rien"
   },
   {
    "nom": "Certaines étoiles sortent trop ou pas assez",
    "sens": "Une étoile plus lourde ou plus légère.",
-   "p": 0.156,
+   "p": 0.203,
    "verdict": "rien"
   },
   {
    "nom": "Certaines paires d'étoiles sortent trop ensemble",
    "sens": "Des étoiles qui se suivent dans la machine.",
-   "p": 0.056,
-   "verdict": "rien"
+   "p": 0.05,
+   "verdict": "à surveiller"
   },
   {
    "nom": "Les étoiles du tirage précédent ressortent",
    "sens": "Un mélange insuffisant des étoiles.",
-   "p": 0.638,
+   "p": 0.578,
    "verdict": "rien"
   }
  ]
